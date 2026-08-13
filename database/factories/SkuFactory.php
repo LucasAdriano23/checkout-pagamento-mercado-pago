@@ -20,7 +20,6 @@ class SkuFactory extends Factory
         return [
             'name' => $this->faker->word(),
             'price' => $this->faker->randomFloat(nbMaxDecimals: 2, min: 500, max: 1000),
-            'description' => $this->faker->paragraph(nbSentences: 1)
         ];
     }
 }
