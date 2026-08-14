@@ -1,8 +1,11 @@
 <?php
 
+use App\Livewire\Checkout;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'checkout.index');
+Route::view('/', 'welcome');
+
+Route::get('/checkout', Checkout::class);
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
