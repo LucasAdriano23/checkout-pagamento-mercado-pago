@@ -7,12 +7,12 @@ enum CheckoutStepsEnum: int
     case SHIPPING = 2;
     case PAYMENT = 3;
 
-    public function getName() : string 
+    public function getName() : string
     {
         return match ($this){
             self::INFORMATION => 'Informações',
             self::SHIPPING => 'Frete',
-            self::PAYMET => 'Pagamento',
+            self::PAYMENT => 'Pagamento',
             default => 'Passo do checkout não encontrado'
         };
     }
