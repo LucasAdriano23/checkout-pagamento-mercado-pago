@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained();
             $table->integer('method'); //ENUM
             $table->integer('status'); //ENUM
-            $table->dateTime('installments')->nullable();
-            $table->dateTime('approved_at');
+            $table->unsignedInteger('installments')->nullable();
+            $table->dateTime('approved_at')->nullable();
             $table->text('qr_code_64')->nullable();
             $table->text('qr_code')->nullable();
             $table->text('ticket_url')->nullable();
