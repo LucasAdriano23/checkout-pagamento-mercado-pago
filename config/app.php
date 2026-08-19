@@ -1,5 +1,9 @@
 <?php
 
+use App\Enums\CheckoutStepsEnum;
+use App\Enums\OrderStatusEnum;
+use Illuminate\Support\Facades\Facade;
+
 return [
 
     /*
@@ -122,5 +126,10 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'aliases' => Facade::defaultAliases()->merge([
+        'CheckoutStepsEnum' => CheckoutStepsEnum::class,
+        'OrderStatusEnum' => OrderStatusEnum::class
+    ])->toArray(),
 
 ];

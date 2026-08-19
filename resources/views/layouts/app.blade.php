@@ -16,6 +16,7 @@
     </head>
     <body class="font-sans antialiased">
         {{ $slot }}
-        @livewireScripts
+
+        @livewireScriptConfig
     </body>
 </html>

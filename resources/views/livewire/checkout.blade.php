@@ -1,5 +1,5 @@
 
-<div class="relative min-h-screen">
+<div class="relative min-h-screen" x-data="checkout">
     <div class="fixed left-0 top-0 hidden h-full w-1/2 bg-tertiary-900 lg:block" aria-hidden="true"></div>
     <div class="fixed right-0 top-0 hidden h-full w-1/2 bg-tertiary-800 lg:block" aria-hidden="true"></div>
 

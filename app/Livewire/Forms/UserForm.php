@@ -11,4 +11,7 @@ class UserForm extends Form
 
     #[Rule('required|min:3|max:255')]
     public $name = "";
+
+    #[Rule('nullable|min:3|cpf')]
+    public $cpf = "";
 }
