@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('shippings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->constrained();
             $table->string('address');
             $table->string('city');
             $table->string('state');
