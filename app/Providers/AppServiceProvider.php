@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Contracts\PaymentGatewayClient;
+use App\Services\MercadoPagoPaymentClient;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentGatewayClient::class, MercadoPagoPaymentClient::class);
     }
 
     /**

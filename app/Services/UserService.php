@@ -8,11 +8,9 @@ class UserService {
 
     public function store(array $user, array $adress): User
     {
-        $user = User::where('email', $user['email'])->first(['id','name','email']);
+        $existingUser = User::where('email', $user['email'])->first(['id','name','email']);
 
-        if(!$user) {
-            $user = User::create([...$user, 'password' => bcrypt(Str::uuid())]);
-        }
+        $user = $existingUser ?? User::create([...$user, 'password' => bcrypt(Str::uuid())]);
 
         $addressExists = $user->addresses()
             ->where('zipcode', $adress['zipcode'] ?? null)
