@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Exceptions\PaymentException;
+use App\Mail\OrderCreatedMail;
 use App\Services\Contracts\PaymentGatewayClient;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class CheckoutService {
@@ -60,7 +62,9 @@ class CheckoutService {
             $address
         );
 
-        $this->orderService->update($order->id, $response, $user, $address);
+        $order =  $this->orderService->update($order->id, $response, $user, $address);
+
+        Mail::to($user->email)->queue(new OrderCreatedMail($order));
 
         return $content;
     }
@@ -120,7 +124,9 @@ class CheckoutService {
             $address
         );
 
-        $this->orderService->update($order->id, $response, $user, $address);
+        $order = $this->orderService->update($order->id, $response, $user, $address);
+
+        Mail::to($user->email)->queue(new OrderCreatedMail($order));
 
         return $content;
     }
