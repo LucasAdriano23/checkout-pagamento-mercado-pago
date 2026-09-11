@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\OrderStatusEnum;
+use App\Enums\PaymentMethodEnum;
+use App\Enums\PaymentStatusEnum;
 use App\Models\Order;
 use App\Models\User;
 use Carbon\Carbon;
@@ -18,8 +20,8 @@ class OrderService {
 
         $order->payments()->create([
             'external_id' => $payment->id,
-            'method' => $this->mapPaymentMethod($payment->payment_type_id),
-            'status' => $order->status->value,
+            'method' => PaymentMethodEnum::parse($payment->payment_type_id)->value,
+            'status' => PaymentStatusEnum::parse($order->status->value)->value,
             'installments' => $payment->installments,
             'approved_at' => $payment->date_approved ? Carbon::parse($payment->date_approved) : null,
             'qr_code_64' => $payment?->point_of_interaction?->transaction_data?->qr_code_base64,
@@ -63,15 +65,5 @@ class OrderService {
             ->implode(', ');
 
         return $description !== '' ? $description : 'Pedido '.$order->id;
-    }
-
-    private function mapPaymentMethod(?string $paymentTypeId): int
-    {
-        return match ($paymentTypeId) {
-            'credit_card', 'debit_card' => 1,
-            'bank_transfer' => 2,
-            'ticket' => 3,
-            default => 1,
-        };
     }
 }

@@ -2,6 +2,8 @@
 
 use App\Enums\CheckoutStepsEnum;
 use App\Enums\OrderStatusEnum;
+use App\Enums\PaymentMethodEnum;
+use App\Enums\PaymentStatusEnum;
 use Illuminate\Support\Facades\Facade;
 
 return [
@@ -129,7 +131,9 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         'CheckoutStepsEnum' => CheckoutStepsEnum::class,
-        'OrderStatusEnum' => OrderStatusEnum::class
+        'OrderStatusEnum' => OrderStatusEnum::class,
+        'PaymentMethodEnum' => PaymentMethodEnum::class,
+        'PaymentStatusEnum' => PaymentStatusEnum::class,
     ])->toArray(),
 
 ];
