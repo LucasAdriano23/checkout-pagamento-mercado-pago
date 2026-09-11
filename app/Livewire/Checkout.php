@@ -7,6 +7,7 @@ use App\Exceptions\PaymentException;
 use App\Livewire\Forms\AddressForm;
 use App\Livewire\Forms\UserForm;
 use App\Services\CheckoutService;
+use App\Services\OrderService;
 use Exception;
 use Livewire\Component;
 
@@ -18,10 +19,10 @@ class Checkout extends Component
     public UserForm $user;
     public AddressForm $address;
 
-    public function mount(CheckoutService $checkoutService)
+    public function mount(OrderService $orderService)
     {
         $this->step = CheckoutStepsEnum::PAYMENT->value;
-        $this->cart = $checkoutService->loadCart();
+        $this->cart = $orderService->getCartOrder()->toArray();
         $this->user->email = config('payment.mercadopago.buyer_email');
     }
 

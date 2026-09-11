@@ -2,11 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\OrderStatusEnum;
 use App\Exceptions\PaymentException;
-use App\Models\Order;
-use App\Models\Payment;
-use Database\Seeders\OrderSeeder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use MercadoPago\Client\Common\RequestOptions;
@@ -15,19 +11,14 @@ use MercadoPago\MercadoPagoConfig;
 
 class CheckoutService {
 
-    public function __construct(private UserService $userService)
+    public function __construct(private UserService $userService, private OrderService $orderService)
     {
         MercadoPagoConfig::setAccessToken(config('payment.mercadopago.access_token'));
     }
 
-    public function loadCart(): array
-    {
-        return $this->getCartOrder()->toArray();
-    }
-
     public function creditCardPayment(array $data): array
     {
-        $order = $this->getCartOrder();
+        $order = $this->orderService->getCartOrder();
 
         $client = new PaymentClient();
 
@@ -36,30 +27,12 @@ class CheckoutService {
             'x-idempotency-key' => (string) Str::uuid(),
         ]);
 
-        $user = $this->userService->store(
-            [
-                'name' => $data['name'] ?? '',
-                'email' => $data['email'] ?? '',
-            ],
-            [
-                'zipcode' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
-                'address' => $data['address']['address'] ?? '',
-                'number' => $data['address']['number'] ?? '',
-                'district' => $data['address']['district'] ?? '',
-                'city' => $data['address']['city'] ?? '',
-                'state' => $data['address']['state'] ?? '',
-                'complement' => $data['address']['complement'] ?? null,
-            ]
-        );
-
-        $order->update(['user_id' => $user->id]);
-
         [$firstName, $lastName] = $this->splitName($data['payer']['name'] ?? '');
 
         $payload = [
             'transaction_amount' => (float)$data['transaction_amount'],
             'token' => $data['token'],
-            'description' => $this->buildDescription($order),
+            'description' => $this->orderService->buildDescription($order),
             'installments' => (int)$data['installments'],
             'payment_method_id' => $data['payment_method_id'],
             'issuer_id' => (int)$data['issuer_id'],
@@ -103,14 +76,24 @@ class CheckoutService {
             $this->friendlyRejectionMessage($content['status_detail'] ?? null)
         );
 
-        $this->storePayment($order, $content, method: 1, installments: (int)$data['installments']);
+        $address = $this->buildAddress($data);
+
+        $user = $this->userService->store(
+            [
+                'name' => $data['name'] ?? '',
+                'email' => $data['email'] ?? '',
+            ],
+            $address
+        );
+
+        $this->orderService->update($order->id, $response, $user, $address);
 
         return $content;
     }
 
     public function pixOrBankSlipPayment(array $data): array
     {
-        $order = $this->getCartOrder();
+        $order = $this->orderService->getCartOrder();
 
         $client = new PaymentClient();
 
@@ -123,27 +106,11 @@ class CheckoutService {
 
         [$firstName, $lastName] = $this->splitName($data['name'] ?? '');
 
-        $user = $this->userService->store(
-            [
-                'name' => $data['name'] ?? '',
-                'email' => $data['email'] ?? '',
-            ],
-            [
-                'zipcode' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
-                'address' => $data['address']['address'] ?? '',
-                'number' => $data['address']['number'] ?? '',
-                'district' => $data['address']['district'] ?? '',
-                'city' => $data['address']['city'] ?? '',
-                'state' => $data['address']['state'] ?? '',
-                'complement' => $data['address']['complement'] ?? null,
-            ]
-        );
-
-        $order->update(['user_id' => $user->id]);
+        $address = $this->buildAddress($data);
 
         $payload = [
             'transaction_amount' => (float) $data['amount'],
-            'description' => $this->buildDescription($order),
+            'description' => $this->orderService->buildDescription($order),
             'payment_method_id' => $paymentMethodId,
             'payer' => [
                 'email' => config('payment.mercadopago.buyer_email'),
@@ -196,46 +163,17 @@ class CheckoutService {
             'Não foi possível gerar o pagamento. Verifique os dados e tente novamente.'
         );
 
-        $method = $paymentMethodId === 'pix' ? 2 : 3;
+        $user = $this->userService->store(
+            [
+                'name' => $data['name'] ?? '',
+                'email' => $data['email'] ?? '',
+            ],
+            $address
+        );
 
-        $this->storePayment($order, $content, method: $method, installments: null);
+        $this->orderService->update($order->id, $response, $user, $address);
 
         return $content;
-    }
-
-    private function storePayment(Order $order, array $content, int $method, ?int $installments): Payment
-    {
-        $status = $this->mapPaymentStatus($content['status'] ?? null);
-
-        $transactionData = $content['point_of_interaction']['transaction_data'] ?? [];
-
-        $payment = Payment::create([
-            'external_id' => (string) $content['id'],
-            'order_id' => $order->id,
-            'method' => $method,
-            'status' => $status->value,
-            'installments' => $installments,
-            'approved_at' => ($content['status'] ?? null) === 'approved' ? now() : null,
-            'qr_code_64' => $transactionData['qr_code_base64'] ?? null,
-            'qr_code' => $transactionData['qr_code'] ?? null,
-            'ticket_url' => $transactionData['ticket_url']
-                ?? $content['transaction_details']['external_resource_url']
-                ?? null,
-        ]);
-
-        $order->update(['status' => $status]);
-
-        return $payment;
-    }
-
-    private function mapPaymentStatus(?string $status): OrderStatusEnum
-    {
-        return match ($status) {
-            'approved' => OrderStatusEnum::PAID,
-            'pending', 'in_process', 'authorized' => OrderStatusEnum::PENDING,
-            'rejected', 'cancelled' => OrderStatusEnum::REJECT,
-            default => OrderStatusEnum::PENDING,
-        };
     }
 
     private function friendlyRejectionMessage(?string $statusDetail): string
@@ -256,17 +194,6 @@ class CheckoutService {
         };
     }
 
-    private function buildDescription(Order $order): string
-    {
-        $description = $order->skus
-            ->groupBy('product.name')
-            ->filter(fn ($skus, $name) => filled($name))
-            ->map(fn ($skus, $name) => $skus->sum('pivot.quantity').'x '.$name)
-            ->implode(', ');
-
-        return $description !== '' ? $description : 'Pedido '.$order->id;
-    }
-
     private function splitName(string $name): array
     {
         $parts = explode(' ', trim($name), 2);
@@ -274,23 +201,16 @@ class CheckoutService {
         return [$parts[0] ?? '', $parts[1] ?? ''];
     }
 
-    private function getCartOrder(): Order
+    private function buildAddress(array $data): array
     {
-        $order = Order::with('skus.product','skus.features')
-            ->where('status', OrderStatusEnum::CART)
-            ->where(function($query){
-                $query->where('session_id', session()->getId());
-                if (auth()->check()) {
-                    $query->orWhere('user_id', auth()->id());
-                }
-            })->first();
-
-        if(!$order && config('app.env') == 'local'){
-            $seed = new OrderSeeder();
-            $seed->run(session()->getId());
-            return $this->getCartOrder();
-        }
-
-        return $order;
+        return [
+            'zipcode' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
+            'address' => $data['address']['address'] ?? '',
+            'number' => $data['address']['number'] ?? '',
+            'district' => $data['address']['district'] ?? '',
+            'city' => $data['address']['city'] ?? '',
+            'state' => $data['address']['state'] ?? '',
+            'complement' => $data['address']['complement'] ?? null,
+        ];
     }
 }
