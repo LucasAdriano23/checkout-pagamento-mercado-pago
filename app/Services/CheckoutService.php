@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use MercadoPago\Client\Common\RequestOptions;
 use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Resources\Payment;
 
 class CheckoutService {
 
@@ -47,25 +48,7 @@ class CheckoutService {
             ],
         ];
 
-        try {
-            $response = $client->create($payload, $requestOptions);
-        } catch (\MercadoPago\Exceptions\MPApiException $e) {
-            Log::error('MercadoPago creditCardPayment: exceção ao chamar a API', [
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-                'status_code' => $e->getStatusCode(),
-                'api_response' => $e->getApiResponse()->getContent(),
-                'payload' => $payload,
-            ]);
-            throw $e;
-        } catch (\Throwable $e) {
-            Log::error('MercadoPago creditCardPayment: exceção ao chamar a API', [
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-                'payload' => $payload,
-            ]);
-            throw $e;
-        }
+        $response = $this->createPayment($client, $payload, $requestOptions, 'creditCardPayment');
 
         $content = $response->getResponse()->getContent();
 
@@ -134,25 +117,7 @@ class CheckoutService {
             ];
         }
 
-        try {
-            $response = $client->create($payload, $requestOptions);
-        } catch (\MercadoPago\Exceptions\MPApiException $e) {
-            Log::error('MercadoPago pixOrBankSlipPayment: exceção ao chamar a API', [
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-                'status_code' => $e->getStatusCode(),
-                'api_response' => $e->getApiResponse()->getContent(),
-                'payload' => $payload,
-            ]);
-            throw $e;
-        } catch (\Throwable $e) {
-            Log::error('MercadoPago pixOrBankSlipPayment: exceção ao chamar a API', [
-                'exception' => get_class($e),
-                'message' => $e->getMessage(),
-                'payload' => $payload,
-            ]);
-            throw $e;
-        }
+        $response = $this->createPayment($client, $payload, $requestOptions, 'pixOrBankSlipPayment');
 
         $content = $response->getResponse()->getContent();
 
@@ -192,6 +157,29 @@ class CheckoutService {
             'cc_rejected_max_attempts' => 'Você atingiu o limite de tentativas. Tente outro cartão ou meio de pagamento.',
             default => 'Verifique os dados do cartão e tente novamente.',
         };
+    }
+
+    private function createPayment(PaymentClient $client, array $payload, RequestOptions $requestOptions, string $context): Payment
+    {
+        try {
+            return $client->create($payload, $requestOptions);
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            Log::error("MercadoPago {$context}: exceção ao chamar a API", [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'status_code' => $e->getStatusCode(),
+                'api_response' => $e->getApiResponse()->getContent(),
+                'payload' => $payload,
+            ]);
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("MercadoPago {$context}: exceção ao chamar a API", [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'payload' => $payload,
+            ]);
+            throw $e;
+        }
     }
 
     private function splitName(string $name): array
