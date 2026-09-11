@@ -9,6 +9,7 @@ use App\Livewire\Forms\UserForm;
 use App\Services\CheckoutService;
 use App\Services\OrderService;
 use Exception;
+use Illuminate\Support\Facades\URL;
 use Livewire\Component;
 
 class Checkout extends Component
@@ -45,7 +46,10 @@ class Checkout extends Component
     public function creditCardPayment(CheckoutService $checkoutService, array $data)
     {
         try {
-            return $checkoutService->creditCardPayment($data);
+            $checkoutService->creditCardPayment($data);
+
+            $this->responsePayment();
+
         } catch(PaymentException $e){
             $this->addError('payment', $e->getMessage());
         } catch(Exception $e){
@@ -56,12 +60,28 @@ class Checkout extends Component
     public function pixOrBankSlipPayment(CheckoutService $checkoutService, array $data)
     {
         try {
-            return $checkoutService->pixOrBankSlipPayment($data);
+            $checkoutService->pixOrBankSlipPayment($data);
+
+            $this->responsePayment();
+
         } catch(PaymentException $e){
             $this->addError('payment', $e->getMessage());
         } catch(Exception $e){
             $this->addError('payment', $e->getMessage());
         }
+    }
+
+    public function responsePayment()
+    {
+        $url = URL::temporarySignedRoute(
+            name: 'checkout.result',
+            expiration:3600,
+            parameters:[
+                'order' => $this->cart['id']
+            ]
+        );
+
+        $this->redirect($url);
     }
 
     public function render()

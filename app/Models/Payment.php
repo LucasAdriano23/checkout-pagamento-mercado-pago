@@ -25,7 +25,7 @@ class Payment extends Model
         'ticket_url',
     ];
 
-    protected $cast = [
+    protected $casts = [
         'method' => PaymentMethodEnum::class,
         'status' => PaymentStatusEnum::class
     ];
