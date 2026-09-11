@@ -108,12 +108,12 @@ class CheckoutService {
 
         if ($paymentMethodId !== 'pix') {
             $payload['payer']['address'] = [
-                'zip_code' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
-                'street_name' => $data['address']['address'] ?? '',
-                'street_number' => $data['address']['number'] ?? '',
-                'neighborhood' => $data['address']['district'] ?? '',
-                'city' => $data['address']['city'] ?? '',
-                'federal_unit' => $data['address']['state'] ?? '',
+                'zip_code' => $address['zipcode'],
+                'street_name' => $address['address'],
+                'street_number' => $address['number'],
+                'neighborhood' => $address['district'],
+                'city' => $address['city'],
+                'federal_unit' => $address['state'],
             ];
         }
 
