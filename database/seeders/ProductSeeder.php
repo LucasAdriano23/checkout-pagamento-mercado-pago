@@ -17,10 +17,21 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
+        $colorFeature = Feature::factory()->create(['name' => 'Cor', 'unit' => null]);
+        $sizeFeature = Feature::factory()->create(['name' => 'Tamanho', 'unit' => null]);
+
+        $colors = ['Preto', 'Branco', 'Azul', 'Vermelho', 'Verde'];
+        $sizes = ['P', 'M', 'G', 'GG'];
+
         Product::factory()
         ->has(Sku::factory()
-            ->hasAttached(Feature::factory()->count(3), ['value' => 1])
             ->count(3)
+            ->afterCreating(function (Sku $sku) use ($colorFeature, $sizeFeature, $colors, $sizes) {
+                $sku->features()->attach([
+                    $colorFeature->id => ['value' => fake()->randomElement($colors)],
+                    $sizeFeature->id => ['value' => fake()->randomElement($sizes)],
+                ]);
+            })
         )
         ->count(5)
         ->create([

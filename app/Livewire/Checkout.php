@@ -3,9 +3,12 @@
 namespace App\Livewire;
 
 use App\Enums\CheckoutStepsEnum;
+use App\Exceptions\PaymentException;
 use App\Livewire\Forms\AddressForm;
 use App\Livewire\Forms\UserForm;
 use App\Services\CheckoutService;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Checkout extends Component
@@ -20,7 +23,7 @@ class Checkout extends Component
     {
         $this->step = CheckoutStepsEnum::PAYMENT->value;
         $this->cart = $checkoutService->loadCart();
-        $this->user->email = config('payment.mercadopago.buyer.buyer_email');
+        $this->user->email = config('payment.mercadopago.buyer_email');
     }
 
     public function findAddress(){
@@ -41,12 +44,24 @@ class Checkout extends Component
 
     public function creditCardPayment(CheckoutService $checkoutService, array $data)
     {
-        return $checkoutService->creditCardPayment($data);
+        try {
+            return $checkoutService->creditCardPayment($data);
+        } catch(PaymentException $e){
+            $this->addError('payment', $e->getMessage());
+        } catch(Exception $e){
+            $this->addError('payment', $e->getMessage());
+        }
     }
 
-    public function pixOrBankSlipPayment(array $data)
+    public function pixOrBankSlipPayment(CheckoutService $checkoutService, array $data)
     {
-        dd($data);
+        try {
+            return $checkoutService->pixOrBankSlipPayment($data);
+        } catch(PaymentException $e){
+            $this->addError('payment', $e->getMessage());
+        } catch(Exception $e){
+            $this->addError('payment', $e->getMessage());
+        }
     }
 
     public function render()
