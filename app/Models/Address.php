@@ -24,6 +24,6 @@ class Address extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belogsTo(User::class);
+        return $this->belongsTo(User::class);
     }
 }
