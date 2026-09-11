@@ -6,7 +6,7 @@ use Livewire\Attributes\Rule;
 use Livewire\Form;
 
 class UserForm extends Form
-{   #[Rule('required|email|unique:users,email')]
+{   #[Rule('required|email')]
     public $email = "";
 
     #[Rule('required|min:3|max:255')]
