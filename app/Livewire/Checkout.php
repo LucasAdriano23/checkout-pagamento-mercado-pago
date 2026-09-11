@@ -8,7 +8,6 @@ use App\Livewire\Forms\AddressForm;
 use App\Livewire\Forms\UserForm;
 use App\Services\CheckoutService;
 use Exception;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Checkout extends Component

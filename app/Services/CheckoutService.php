@@ -15,7 +15,7 @@ use MercadoPago\MercadoPagoConfig;
 
 class CheckoutService {
 
-    public function __construct()
+    public function __construct(private UserService $userService)
     {
         MercadoPagoConfig::setAccessToken(config('payment.mercadopago.access_token'));
     }
@@ -35,6 +35,24 @@ class CheckoutService {
         $requestOptions->setCustomHeaders([
             'x-idempotency-key' => (string) Str::uuid(),
         ]);
+
+        $user = $this->userService->store(
+            [
+                'name' => $data['name'] ?? '',
+                'email' => $data['email'] ?? '',
+            ],
+            [
+                'zipcode' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
+                'address' => $data['address']['address'] ?? '',
+                'number' => $data['address']['number'] ?? '',
+                'district' => $data['address']['district'] ?? '',
+                'city' => $data['address']['city'] ?? '',
+                'state' => $data['address']['state'] ?? '',
+                'complement' => $data['address']['complement'] ?? null,
+            ]
+        );
+
+        $order->update(['user_id' => $user->id]);
 
         [$firstName, $lastName] = $this->splitName($data['payer']['name'] ?? '');
 
@@ -104,6 +122,24 @@ class CheckoutService {
         $paymentMethodId = $data['method'];
 
         [$firstName, $lastName] = $this->splitName($data['name'] ?? '');
+
+        $user = $this->userService->store(
+            [
+                'name' => $data['name'] ?? '',
+                'email' => $data['email'] ?? '',
+            ],
+            [
+                'zipcode' => preg_replace('/\D+/', '', $data['address']['zipcode'] ?? ''),
+                'address' => $data['address']['address'] ?? '',
+                'number' => $data['address']['number'] ?? '',
+                'district' => $data['address']['district'] ?? '',
+                'city' => $data['address']['city'] ?? '',
+                'state' => $data['address']['state'] ?? '',
+                'complement' => $data['address']['complement'] ?? null,
+            ]
+        );
+
+        $order->update(['user_id' => $user->id]);
 
         $payload = [
             'transaction_amount' => (float) $data['amount'],

@@ -118,6 +118,7 @@ export default () => {
             this.$wire.pixOrBankSlipPayment({
                 amount: this.$wire.$get("cart.total"),
                 method,
+                email: this.$wire.$get('user.email'),
                 cpf: this.$wire.$get('user.cpf'),
                 name: this.$wire.$get('user.name'),
                 address: {
