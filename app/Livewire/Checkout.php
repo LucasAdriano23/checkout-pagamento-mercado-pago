@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\CheckoutStepsEnum;
+use App\Exceptions\CartExpiredException;
 use App\Exceptions\PaymentException;
 use App\Livewire\Forms\AddressForm;
 use App\Livewire\Forms\UserForm;
@@ -15,6 +16,7 @@ use Livewire\Component;
 class Checkout extends Component
 {
     public array $cart = [];
+    public bool $cartExpired = false;
     public int $step;
     public int | null $method = null;
     public UserForm $user;
@@ -22,8 +24,17 @@ class Checkout extends Component
 
     public function mount(OrderService $orderService)
     {
-        $this->step = CheckoutStepsEnum::PAYMENT->value;
-        $this->cart = $orderService->getCartOrder()->toArray();
+        $this->step = CheckoutStepsEnum::INFORMATION->value;
+
+        $cart = $orderService->getCartOrder();
+
+        if (!$cart) {
+            $this->cartExpired = true;
+
+            return;
+        }
+
+        $this->cart = $cart->toArray();
         $this->user->email = config('payment.mercadopago.buyer_email');
     }
 
@@ -50,6 +61,9 @@ class Checkout extends Component
 
             $this->responsePayment();
 
+        } catch(CartExpiredException $e){
+            $this->restartCheckout();
+
         } catch(PaymentException $e){
             $this->addError('payment', $e->getMessage());
         } catch(Exception $e){
@@ -64,11 +78,22 @@ class Checkout extends Component
 
             $this->responsePayment();
 
+        } catch(CartExpiredException $e){
+            $this->restartCheckout();
+
         } catch(PaymentException $e){
             $this->addError('payment', $e->getMessage());
         } catch(Exception $e){
             $this->addError('payment', $e->getMessage());
         }
+    }
+
+    public function restartCheckout()
+    {
+        $this->cartExpired = true;
+        $this->cart = [];
+        $this->step = CheckoutStepsEnum::INFORMATION->value;
+        $this->resetErrorBag();
     }
 
     public function responsePayment()

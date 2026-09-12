@@ -44,7 +44,7 @@ class OrderService {
         return $order;
     }
 
-    public function getCartOrder(): Order
+    public function getCartOrder(): ?Order
     {
         return Order::with('skus.product','skus.features')
             ->where('status', OrderStatusEnum::CART)

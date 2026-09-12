@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\CartExpiredException;
 use App\Exceptions\PaymentException;
 use App\Mail\OrderCreatedMail;
 use App\Services\Contracts\PaymentGatewayClient;
@@ -20,6 +21,8 @@ class CheckoutService {
     public function creditCardPayment(array $data): array
     {
         $order = $this->orderService->getCartOrder();
+
+        throw_if(!$order, CartExpiredException::class);
 
         [$firstName, $lastName] = $this->splitName($data['payer']['name'] ?? '');
 
@@ -72,6 +75,8 @@ class CheckoutService {
     public function pixOrBankSlipPayment(array $data): array
     {
         $order = $this->orderService->getCartOrder();
+
+        throw_if(!$order, CartExpiredException::class);
 
         $paymentMethodId = $data['method'];
 
