@@ -28,6 +28,32 @@ composer install
 ./vendor/bin/sail npm install && ./vendor/bin/sail npm run dev
 ```
 
+### Atalho para o Sail
+
+Todos os comandos deste README começam com `./vendor/bin/sail`. Vale criar um alias e escrever só `sail`:
+
+```bash
+alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
+```
+
+Para não perder o atalho ao fechar o terminal, acrescente a linha ao seu `~/.bashrc` (ou `~/.zshrc`) e recarregue:
+
+```bash
+echo "alias sail='sh \$([ -f sail ] && echo sail || echo vendor/bin/sail)'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+Daí em diante:
+
+```bash
+sail up -d
+sail artisan migrate --seed
+sail artisan coverage
+sail npm run dev
+```
+
+O `$([ -f sail ] ...)` existe porque alguns projetos mantêm uma cópia do script na raiz; ele usa essa cópia quando existe e cai no `vendor/bin/sail` caso contrário.
+
 Preencha as credenciais do Mercado Pago no `.env` (as de teste servem):
 
 ```dotenv
