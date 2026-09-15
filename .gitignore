@@ -13,8 +13,10 @@
 /.vscode
 /.zed
 /auth.json
+/coverage
 /node_modules
 /public/build
+/public/coverage
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
